@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cadastro de usuários — CondoNet</title>
+<style>
+  :root {
+    --teal-900: #0d3a4a;
+    --teal-800: #114a5e;
+    --teal-700: #15597f;
+    --blue-600: #1b6fa8;
+    --blue-500: #2b86c5;
+    --ink: #1f2933;
+    --muted: #6b7785;
+    --line: #e3e7ec;
+    --line-soft: #eceff3;
+    --field-bg: #eef1f5;
+    --field-bg-focus: #ffffff;
+    --page-bg: #ffffff;
+    --chrome-bg: #f1f3f6;
+    --red: #c0392b;
+    --red-soft: #e74c3c;
+    --ok: #15803d;
+    --radius: 9px;
+    --shadow-modal: 0 24px 60px rgba(13,58,74,.28), 0 4px 14px rgba(13,58,74,.12);
+    --font: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    font-family: var(--font);
+    color: var(--ink);
+    background: #c9ced6;
+  }
+
+  /* ===== App window ===== */
+  .app {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--page-bg);
+    overflow: hidden;
+  }
+
+  /* Title / menu bar */
+  .titlebar {
+    background: var(--teal-900);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    height: 54px;
+    padding: 0 6px 0 16px;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .brand-mark {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 22px;
+    margin-right: 22px;
+  }
+  .brand-mark span {
+    width: 4px;
+    border-radius: 1px;
+    background: var(--blue-500);
+  }
+  .brand-mark span:nth-child(1){ height: 10px; opacity:.6; }
+  .brand-mark span:nth-child(2){ height: 18px; opacity:.8; }
+  .brand-mark span:nth-child(3){ height: 22px; }
+  .brand-mark span:nth-child(4){ height: 14px; opacity:.7; }
+
+  .menu {
+    display: flex;
+    gap: 4px;
+  }
+  .menu button {
+    background: none;
+    border: none;
+    color: #eaf1f4;
+    font: inherit;
+    font-size: 14px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .menu button:hover { background: rgba(255,255,255,.1); }
+
+  .titlebar-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .conectar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .conectar:hover { background: rgba(255,255,255,.1); }
+  .win-btn {
+    width: 42px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #dfe8ec;
+  }
+  .win-btn:hover { background: rgba(255,255,255,.12); }
+  .win-btn.close:hover { background: #d83b3b; color:#fff; }
+
+  /* Tab strip */
+  .tabstrip {
+    background: var(--chrome-bg);
+    display: flex;
+    align-items: stretch;
+    height: 46px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--line);
+    padding-left: 4px;
+  }
+  .tab-home {
+    width: 52px;
+    display: grid;
+    place-items: center;
+    color: var(--teal-700);
+  }
+  .tab {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: #fff;
+    padding: 0 14px;
+    margin: 6px 0;
+    border-radius: 8px 8px 0 0;
+    font-size: 14px;
+    color: var(--teal-900);
+    font-weight: 500;
+    box-shadow: 0 -1px 0 var(--line) inset;
+    align-self: flex-end;
+    height: 40px;
+  }
+  .tab .tab-icon { color: var(--teal-700); display:flex; }
+  .tab .tab-close {
+    color: var(--muted);
+    display: grid;
+    place-items: center;
+    width: 18px; height: 18px;
+    border-radius: 4px;
+  }
+  .tab .tab-close:hover { background: var(--line); }
+
+  /* Content */
+  .content {
+    flex: 1;
+    overflow: auto;
+    padding: 30px 40px 0;
+    background: #fff;
+  }
+  .page-title {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--teal-900);
+    margin: 0 0 26px;
+    letter-spacing: -.01em;
+  }
+  .list-head {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .list-head h2 {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--teal-900);
+    margin: 0;
+  }
+  .list-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .btn {
+    font: inherit;
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    background: none;
+    white-space: nowrap;
+  }
+  .btn-outline {
+    border-color: var(--blue-600);
+    color: var(--teal-900);
+    background: #fff;
+    font-weight: 600;
+  }
+  .btn-outline:hover { background: #f3f8fb; }
+  .btn-outline svg { color: var(--blue-600); }
+  .btn-primary {
+    background: var(--teal-800);
+    color: #fff;
+    font-weight: 600;
+    border-color: var(--teal-800);
+  }
+  .btn-primary:hover { background: var(--teal-900); }
+  .btn-ghost { color: var(--teal-900); }
+  .btn-ghost:hover { background: var(--line-soft); }
+
+  .search {
+    position: relative;
+  }
+  .search svg {
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+  }
+  .search input {
+    font: inherit;
+    font-size: 14px;
+    padding: 10px 14px 10px 36px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    width: 280px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .search input::placeholder { color: var(--muted); }
+  .search input:focus { outline: none; border-color: var(--blue-500); }
+
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  thead th {
+    text-align: left;
+    color: var(--teal-900);
+    font-weight: 600;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  thead th .th-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  thead th .sort { color: #aeb6c0; }
+  tbody td {
+    padding: 16px;
+    border-bottom: 1px solid var(--line-soft);
+    color: var(--ink);
+  }
+  tbody tr:hover { background: #fafbfc; }
+  .row-actions { display: flex; gap: 14px; justify-content: flex-end; }
+  .icon-btn {
+    background: none; border: none; cursor: pointer; padding: 4px;
+    display: grid; place-items: center; border-radius: 6px;
+  }
+  .icon-btn.edit { color: var(--blue-600); }
+  .icon-btn.del { color: var(--red-soft); }
+  .icon-btn:hover { background: var(--line-soft); }
+  .type-pill {
+    display: inline-block;
+  }
+
+  /* Footer bar */
+  .footerbar {
+    flex-shrink: 0;
+    border-top: 1px solid var(--line);
+    background: #fff;
+    padding: 16px 40px;
+    margin: 18px 22px 22px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 14px;
+  }
+
+  /* ===== Modal ===== */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(13,33,43,.45);
+    display: grid;
+    place-items: center;
+    padding: 28px;
+    z-index: 50;
+  }
+  .overlay[hidden] { display: none; }
+  .modal {
+    width: min(1080px, 100%);
+    max-height: calc(100vh - 56px);
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: var(--shadow-modal);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-head {
+    display: flex;
+    align-items: center;
+    padding: 22px 28px;
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+  .modal-head h3 {
+    margin: 0;
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--teal-900);
+  }
+  .modal-head .sub {
+    margin-left: 14px;
+    font-size: 13px;
+    color: var(--muted);
+    border-left: 1px solid var(--line);
+    padding-left: 14px;
+  }
+  .modal-close {
+    margin-left: auto;
+    background: none; border: none; cursor: pointer;
+    color: var(--muted);
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: grid; place-items: center;
+  }
+  .modal-close:hover { background: var(--line-soft); color: var(--ink); }
+
+  .modal-body {
+    overflow: auto;
+    padding: 8px 28px 26px;
+  }
+
+  /* Section */
+  .section { padding-top: 22px; }
+  .section + .section { border-top: 1px solid var(--line-soft); margin-top: 6px; }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--teal-700);
+    margin-bottom: 16px;
+  }
+  .section-title svg { color: var(--blue-600); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 16px 20px;
+  }
+  .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+  .field.col-2 { grid-column: span 2; }
+  .field.col-3 { grid-column: span 3; }
+  .field.col-4 { grid-column: span 4; }
+  .field.col-5 { grid-column: span 5; }
+  .field.col-6 { grid-column: span 6; }
+  .field.col-7 { grid-column: span 7; }
+  .field.col-8 { grid-column: span 8; }
+  .field.col-9 { grid-column: span 9; }
+  .field.col-10 { grid-column: span 10; }
+  .field.col-11 { grid-column: span 11; }
+  .field.col-12 { grid-column: span 12; }
+
+  label.flbl {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--teal-900);
+  }
+  label.flbl .req { color: var(--red); margin-left: 2px; }
+  label.flbl .hint { color: var(--muted); font-weight: 400; margin-left: 6px; }
+
+  .ctrl {
+    font: inherit;
+    font-size: 14.5px;
+    padding: 11px 13px;
+    background: var(--field-bg);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius);
+    color: var(--ink);
+    width: 100%;
+  }
+  .ctrl::placeholder { color: #9aa4b0; }
+  .ctrl:focus {
+    outline: none;
+    background: var(--field-bg-focus);
+    border-color: var(--teal-900);
+    box-shadow: 0 0 0 3px rgba(13,58,74,.10);
+  }
+  textarea.ctrl { resize: vertical; min-height: 76px; line-height: 1.5; }
+  select.ctrl { appearance: none; background-image: none; cursor: pointer; }
+
+  .select-wrap { position: relative; }
+  .select-wrap svg {
+    position: absolute; right: 12px; top: 50%;
+    transform: translateY(-50%); pointer-events: none; color: var(--muted);
+  }
+
+  /* Segmented control */
+  .seg {
+    display: inline-flex;
+    background: var(--field-bg);
+    border-radius: var(--radius);
+    padding: 4px;
+    gap: 4px;
+    width: 100%;
+  }
+  .seg button {
+    flex: 1;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    background: none;
+    color: var(--muted);
+    padding: 8px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] {
+    background: #fff;
+    color: var(--teal-900);
+    box-shadow: 0 1px 3px rgba(13,58,74,.18);
+  }
+
+  /* Inline group (input with addon button) */
+  .with-addon { display: flex; gap: 8px; align-items: stretch; }
+  .with-addon .ctrl { flex: 1; }
+  .addon-btn {
+    flex-shrink: 0;
+    border: 1.5px solid var(--blue-600);
+    color: var(--teal-900);
+    background: #fff;
+    border-radius: var(--radius);
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 0 14px;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px;
+    white-space: nowrap;
+  }
+  .addon-btn:hover { background: #f3f8fb; }
+  .addon-btn svg { color: var(--blue-600); }
+
+  .ctrl.readonly { background: #e7ecf1; color: var(--muted); cursor: not-allowed; }
+
+  /* Phone row: operadora-ddd-numero */
+  .phone-row { display: grid; grid-template-columns: 64px 64px 1fr; gap: 8px; }
+
+  /* checkbox */
+  .check {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-size: 14px; color: var(--ink); cursor: pointer; user-select: none;
+  }
+  .check input { position: absolute; opacity: 0; pointer-events: none; }
+  .check .box {
+    width: 20px; height: 20px; border-radius: 6px;
+    border: 1.5px solid #b7c0ca; background: #fff;
+    display: grid; place-items: center; color: #fff;
+    transition: .12s;
+  }
+  .check input:checked + .box { background: var(--teal-800); border-color: var(--teal-800); }
+  .check input:focus-visible + .box { box-shadow: 0 0 0 3px rgba(13,58,74,.18); }
+
+  /* Modal footer */
+  .modal-foot {
+    flex-shrink: 0;
+    border-top: 1px solid var(--line);
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #fcfdfe;
+  }
+  .modal-foot .left { display: flex; gap: 14px; }
+  .modal-foot .right { margin-left: auto; display: flex; gap: 12px; }
+  .btn-danger-outline {
+    border: 1.5px solid var(--red-soft);
+    color: var(--red);
+    background: #fff;
+    font-weight: 600;
+  }
+  .btn-danger-outline:hover { background: #fdf2f1; }
+  .req-note { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .req-note .req { color: var(--red); }
+
+  /* Legend banner */
+  .compare-note {
+    display: flex; align-items: center; gap: 10px;
+    background: #eef6fb; border: 1px solid #cfe6f5;
+    color: var(--teal-800); font-size: 13px;
+    padding: 10px 14px; border-radius: 9px;
+    margin: 16px 0 0;
+  }
+  .compare-note strong { color: var(--teal-900); }
+</style>
+</head>
+<body>
+<div class="app" data-screen-label="Cadastro de usuários">
+
+  <!-- ===== Title / menu bar ===== -->
+  <div class="titlebar">
+    <div class="brand-mark"><span></span><span></span><span></span><span></span></div>
+    <nav class="menu">
+      <button type="button">Arquivo</button>
+      <button type="button">Pabx</button>
+      <button type="button">Ferramentas</button>
+      <button type="button">Configurações</button>
+      <button type="button">Ajuda</button>
+    </nav>
+    <div class="titlebar-right">
+      <div class="conectar">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Conectar CondoNet
+      </div>
+      <div class="win-btn" title="Minimizar"><svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      <div class="win-btn" title="Maximizar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="1"/></svg></div>
+      <div class="win-btn close" title="Fechar"><svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></div>
+    </div>
+  </div>
+
+  <!-- ===== Tab strip ===== -->
+  <div class="tabstrip">
+    <div class="tab-home"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+    <div class="tab">
+      <span class="tab-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      Cadastro de usuários
+      <span class="tab-close"><svg width="13" height="13" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></span>
+    </div>
+  </div>
+
+  <!-- ===== Content ===== -->
+  <div class="content">
+    <h1 class="page-title">Cadastro de usuários</h1>
+
+    <div class="list-head">
+      <h2>Lista de usuários</h2>
+      <div class="list-actions">
+        <button type="button" class="btn btn-outline" id="openModal">
+          <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Novo usuário
+        </button>
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Pesquisar" />
+        </div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th><div class="th-inner">Nome <span class="sort">⇅</span></div></th>
+          <th><div class="th-inner">CPF / CNPJ <span class="sort">⇅</span></div></th>
+          <th><div class="th-inner">Celular <span class="sort">⇅</span></div></th>
+          <th><div class="th-inner">Placa do veículo <span class="sort">⇅</span></div></th>
+          <th><div class="th-inner">Número flexível <span class="sort">⇅</span></div></th>
+          <th><div class="th-inner">E-mail <span class="sort">⇅</span></div></th>
+          <th><div class="th-inner">Tipo <span class="sort">⇅</span></div></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>igor</td>
+          <td>002.004.492-57</td>
+          <td>(21) 21212-1212</td>
+          <td>2221212</td>
+          <td>201</td>
+          <td>212@gm.com</td>
+          <td><span class="type-pill">Visitante</span></td>
+          <td>
+            <div class="row-actions">
+              <button class="icon-btn edit" type="button" id="openEdit" title="Editar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg></button>
+              <button class="icon-btn del" type="button" title="Excluir"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== Footer bar ===== -->
+  <div class="footerbar">
+    <button type="button" class="btn btn-outline">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      Restaurar
+    </button>
+    <button type="button" class="btn btn-outline">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Ajuda
+    </button>
+    <button type="button" class="btn btn-outline">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Salvar
+    </button>
+  </div>
+</div>
+
+<!-- ===== Modal: Novo usuário (completo) ===== -->
+<div class="overlay" id="overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" data-screen-label="Modal Novo usuário">
+    <div class="modal-head">
+      <h3 id="modalTitle">Novo usuário</h3>
+      <span class="sub">Código <strong>—</strong> · novo registro</span>
+      <button type="button" class="modal-close" id="closeModal" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- 1. Identificação -->
+      <section class="section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Identificação
+        </div>
+        <div class="grid">
+          <div class="field col-3">
+            <label class="flbl">Tipo de pessoa</label>
+            <div class="seg" id="pessoaSeg">
+              <button type="button" data-pessoa="fisica" aria-pressed="true">Física</button>
+              <button type="button" data-pessoa="juridica" aria-pressed="false">Jurídica</button>
+            </div>
+          </div>
+          <div class="field col-6">
+            <label class="flbl">Nome <span class="req">*</span></label>
+            <input type="text" class="ctrl" placeholder="Nome completo / razão social" />
+          </div>
+          <div class="field col-3">
+            <label class="flbl">Código</label>
+            <input type="text" class="ctrl readonly" value="Gerado ao salvar" readonly />
+          </div>
+
+          <div class="field col-3" id="docField">
+            <label class="flbl" id="docLabel">CPF</label>
+            <input type="text" class="ctrl" id="docInput" placeholder="000.000.000-00" inputmode="numeric" />
+          </div>
+          <div class="field col-3">
+            <label class="flbl">Tipo <span class="req">*</span></label>
+            <div class="select-wrap">
+              <select class="ctrl">
+                <option>Cliente</option>
+                <option>Visitante</option>
+                <option>Morador</option>
+                <option>Funcionário</option>
+                <option>Prestador de serviço</option>
+              </select>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="field col-3">
+            <label class="flbl">Número flexível <span class="req">*</span></label>
+            <div class="select-wrap">
+              <select class="ctrl">
+                <option value="">Selecione…</option>
+                <option>201</option><option>202</option><option>203</option><option>204</option>
+              </select>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="field col-3">
+            <label class="flbl">Ramal / Apto</label>
+            <input type="text" class="ctrl" placeholder="Ex.: 101" />
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Veículo & Acesso -->
+      <section class="section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-5l2-5h12l2 5v5h-2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>
+          Veículo &amp; Acesso
+        </div>
+        <div class="grid">
+          <div class="field col-3">
+            <label class="flbl">Placa do veículo</label>
+            <input type="text" class="ctrl" placeholder="ABC-1D23" />
+          </div>
+          <div class="field col-9">
+            <label class="flbl">Credenciais de acesso <span class="hint">— cartão, tag ou biometria</span></label>
+            <div class="with-addon">
+              <input type="text" class="ctrl readonly" value="Nenhuma credencial cadastrada" readonly />
+              <button type="button" class="addon-btn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Cadastrar acesso
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Profissional -->
+      <section class="section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          Profissional
+        </div>
+        <div class="grid">
+          <div class="field col-6">
+            <label class="flbl">Empresa</label>
+            <input type="text" class="ctrl" placeholder="Nome da empresa" />
+          </div>
+          <div class="field col-6">
+            <label class="flbl">Cargo</label>
+            <input type="text" class="ctrl" placeholder="Função / cargo" />
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Contato -->
+      <section class="section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Contato
+        </div>
+        <div class="grid">
+          <div class="field col-6">
+            <label class="flbl">E-mail</label>
+            <input type="email" class="ctrl" placeholder="nome@dominio.com" />
+          </div>
+          <div class="field col-6">
+            <label class="flbl">Página Web</label>
+            <input type="text" class="ctrl" placeholder="https://" />
+          </div>
+
+          <div class="field col-4">
+            <label class="flbl">Celular <span class="hint">— Operadora · DDD · Número</span></label>
+            <div class="phone-row">
+              <input type="text" class="ctrl" placeholder="Op." />
+              <input type="text" class="ctrl" placeholder="DDD" />
+              <input type="text" class="ctrl" placeholder="00000-0000" />
+            </div>
+          </div>
+          <div class="field col-4">
+            <label class="flbl">Telefone principal</label>
+            <div class="phone-row">
+              <input type="text" class="ctrl" placeholder="Op." />
+              <input type="text" class="ctrl" placeholder="DDD" />
+              <input type="text" class="ctrl" placeholder="0000-0000" />
+            </div>
+          </div>
+          <div class="field col-4">
+            <label class="flbl">Comercial</label>
+            <div class="phone-row">
+              <input type="text" class="ctrl" placeholder="Op." />
+              <input type="text" class="ctrl" placeholder="DDD" />
+              <input type="text" class="ctrl" placeholder="0000-0000" />
+            </div>
+          </div>
+          <div class="field col-4">
+            <label class="flbl">Residencial</label>
+            <div class="phone-row">
+              <input type="text" class="ctrl" placeholder="Op." />
+              <input type="text" class="ctrl" placeholder="DDD" />
+              <input type="text" class="ctrl" placeholder="0000-0000" />
+            </div>
+          </div>
+          <div class="field col-4">
+            <label class="flbl">Fax</label>
+            <div class="phone-row">
+              <input type="text" class="ctrl" placeholder="Op." />
+              <input type="text" class="ctrl" placeholder="DDD" />
+              <input type="text" class="ctrl" placeholder="0000-0000" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. Endereço -->
+      <section class="section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Endereço
+        </div>
+        <div class="grid">
+          <div class="field col-2">
+            <label class="flbl">CEP</label>
+            <input type="text" class="ctrl" placeholder="00000-000" inputmode="numeric" />
+          </div>
+          <div class="field col-10">
+            <label class="flbl">Endereço</label>
+            <input type="text" class="ctrl" placeholder="Rua, número, complemento, bairro" />
+          </div>
+          <div class="field col-6">
+            <label class="flbl">Cidade</label>
+            <input type="text" class="ctrl" placeholder="Cidade" />
+          </div>
+          <div class="field col-2">
+            <label class="flbl">UF</label>
+            <div class="select-wrap">
+              <select class="ctrl">
+                <option value="">—</option>
+                <option>RJ</option><option>SP</option><option>MG</option><option>ES</option>
+              </select>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="field col-4">
+            <label class="flbl">País</label>
+            <input type="text" class="ctrl" value="Brasil" />
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. Atendimento & Observações -->
+      <section class="section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Atendimento &amp; Observações
+        </div>
+        <div class="grid">
+          <div class="field col-4">
+            <label class="flbl">Tipo de atendimento</label>
+            <div class="select-wrap">
+              <select class="ctrl">
+                <option>Atendimento Padrão</option>
+                <option>Atendimento VIP</option>
+                <option>Não perturbe</option>
+              </select>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="field col-8" style="justify-content:flex-end;">
+            <label class="check">
+              <input type="checkbox" />
+              <span class="box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+              Contato particular
+            </label>
+          </div>
+          <div class="field col-12">
+            <label class="flbl">Observações</label>
+            <textarea class="ctrl" placeholder="Anotações internas sobre o contato…"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <div class="compare-note">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span><strong>Proposta:</strong> visual do CondoNet novo + todos os campos do cadastro legado, agrupados em seções. Campos antes soltos foram organizados por contexto.</span>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <div class="left">
+        <button type="button" class="btn btn-danger-outline">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          Cancelar
+        </button>
+      </div>
+      <div class="req-note"><span class="req">*</span> Campos obrigatórios</div>
+      <div class="right">
+        <button type="button" class="btn btn-ghost" id="closeModal2">Fechar</button>
+        <button type="button" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar usuário
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const overlay = document.getElementById('overlay');
+  const open = () => { overlay.hidden = false; };
+  const close = () => { overlay.hidden = true; };
+  document.getElementById('openModal').addEventListener('click', open);
+  document.getElementById('openEdit').addEventListener('click', () => {
+    document.getElementById('modalTitle').textContent = 'Editar usuário';
+    open();
+  });
+  document.getElementById('closeModal').addEventListener('click', close);
+  document.getElementById('closeModal2').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+
+  // Pessoa Física / Jurídica toggle -> CPF / CNPJ
+  const seg = document.getElementById('pessoaSeg');
+  const docLabel = document.getElementById('docLabel');
+  const docInput = document.getElementById('docInput');
+  const docField = document.getElementById('docField');
+  seg.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b === btn));
+    if (btn.dataset.pessoa === 'juridica') {
+      docLabel.textContent = 'CNPJ';
+      docInput.placeholder = '00.000.000/0000-00';
+      docField.classList.remove('col-3'); docField.classList.add('col-4');
+    } else {
+      docLabel.textContent = 'CPF';
+      docInput.placeholder = '000.000.000-00';
+      docField.classList.remove('col-4'); docField.classList.add('col-3');
+    }
+  });
+
+  // Open modal by default so the proposal is visible on load
+  open();
+</script>
+</body>
+</html>
