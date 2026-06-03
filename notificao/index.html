@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Notificações de Eventos — CondoNet</title>
+<style>
+  :root {
+    --teal-900: #0d3a4a;
+    --teal-800: #114a5e;
+    --teal-700: #15597f;
+    --blue-600: #1b6fa8;
+    --blue-500: #2b86c5;
+    --ink: #1f2933;
+    --muted: #6b7785;
+    --line: #e3e7ec;
+    --line-soft: #eceff3;
+    --field-bg: #eef1f5;
+    --page-bg: #ffffff;
+    --chrome-bg: #f1f3f6;
+    --red: #c0392b;
+    --red-soft: #e74c3c;
+    --amber: #b7791f;
+    --green: #15803d;
+    --radius: 9px;
+    --font: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: var(--font); color: var(--ink); background: #c9ced6; }
+
+  .app { height: 100vh; display: flex; flex-direction: column; background: var(--page-bg); overflow: hidden; }
+
+  /* Title / menu bar */
+  .titlebar { background: var(--teal-900); color: #fff; display: flex; align-items: center; height: 54px; padding: 0 6px 0 16px; flex-shrink: 0; user-select: none; }
+  .brand-mark { display: flex; align-items: flex-end; gap: 2px; height: 22px; margin-right: 22px; }
+  .brand-mark span { width: 4px; border-radius: 1px; background: var(--blue-500); }
+  .brand-mark span:nth-child(1){ height: 10px; opacity:.6; }
+  .brand-mark span:nth-child(2){ height: 18px; opacity:.8; }
+  .brand-mark span:nth-child(3){ height: 22px; }
+  .brand-mark span:nth-child(4){ height: 14px; opacity:.7; }
+  .menu { display: flex; gap: 4px; }
+  .menu button { background: none; border: none; color: #eaf1f4; font: inherit; font-size: 14px; padding: 7px 12px; border-radius: 6px; cursor: pointer; }
+  .menu button:hover { background: rgba(255,255,255,.1); }
+  .titlebar-right { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+  .conectar { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; padding: 6px 14px; border-radius: 6px; cursor: pointer; }
+  .conectar:hover { background: rgba(255,255,255,.1); }
+  .conectar .dot { width: 8px; height: 8px; border-radius: 50%; background: #46d18a; box-shadow: 0 0 0 3px rgba(70,209,138,.25); }
+  .win-btn { width: 42px; height: 38px; display: grid; place-items: center; border-radius: 6px; cursor: pointer; color: #dfe8ec; }
+  .win-btn:hover { background: rgba(255,255,255,.12); }
+  .win-btn.close:hover { background: #d83b3b; color:#fff; }
+
+  /* Tab strip */
+  .tabstrip { background: var(--chrome-bg); display: flex; align-items: stretch; height: 46px; flex-shrink: 0; border-bottom: 1px solid var(--line); padding-left: 4px; }
+  .tab-home { width: 52px; display: grid; place-items: center; color: var(--teal-700); }
+  .tab { display: flex; align-items: center; gap: 9px; background: #fff; padding: 0 14px; margin: 6px 0; border-radius: 8px 8px 0 0; font-size: 14px; color: var(--teal-900); font-weight: 500; align-self: flex-end; height: 40px; }
+  .tab .tab-icon { color: var(--teal-700); display:flex; }
+  .tab .tab-close { color: var(--muted); display: grid; place-items: center; width: 18px; height: 18px; border-radius: 4px; }
+  .tab .tab-close:hover { background: var(--line); }
+
+  /* Content */
+  .content { flex: 1; overflow: auto; padding: 26px 40px 0; background: #fff; }
+  .page-head { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 18px; }
+  .page-title { font-size: 28px; font-weight: 700; color: var(--teal-900); margin: 0; letter-spacing: -.01em; }
+  .us-badge { font-size: 12px; font-weight: 700; color: var(--blue-600); background: #eaf3fa; border: 1px solid #cfe6f5; padding: 4px 10px; border-radius: 20px; margin-bottom: 4px; }
+  .page-sub { color: var(--muted); font-size: 14px; margin: 0 0 0 auto; max-width: 460px; text-align: right; }
+
+  /* Sub-tabs */
+  .subtabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
+  .subtab { background: none; border: none; font: inherit; font-size: 15px; font-weight: 600; color: var(--muted); padding: 12px 18px; cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1px; display: inline-flex; align-items: center; gap: 9px; }
+  .subtab svg { opacity: .8; }
+  .subtab:hover { color: var(--teal-800); }
+  .subtab[aria-selected="true"] { color: var(--teal-900); border-bottom-color: var(--blue-600); }
+
+  .panel[hidden] { display: none; }
+
+  /* ===== Config table ===== */
+  .config-toolbar { display: flex; align-items: center; gap: 16px; background: #f7f9fb; border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; margin-bottom: 18px; flex-wrap: wrap; }
+  .config-toolbar .audio { display: flex; align-items: center; gap: 10px; }
+  .config-toolbar label.mini { font-size: 13px; font-weight: 600; color: var(--teal-900); }
+  .role-chip { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--teal-800); background: #fff; border: 1px solid var(--line); padding: 7px 12px; border-radius: 20px; }
+  .role-chip .ico { color: var(--amber); display: flex; }
+
+  .ctrl { font: inherit; font-size: 14px; padding: 9px 12px; background: var(--field-bg); border: 1.5px solid transparent; border-radius: var(--radius); color: var(--ink); }
+  .ctrl:focus { outline: none; background: #fff; border-color: var(--teal-900); box-shadow: 0 0 0 3px rgba(13,58,74,.10); }
+  select.ctrl { appearance: none; cursor: pointer; padding-right: 30px; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7785' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat: no-repeat; background-position: right 9px center; }
+
+  .ghost-btn { font: inherit; font-size: 13.5px; font-weight: 600; color: var(--teal-900); background: #fff; border: 1.5px solid var(--blue-600); border-radius: 8px; padding: 8px 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+  .ghost-btn:hover { background: #f3f8fb; }
+  .ghost-btn svg { color: var(--blue-600); }
+
+  table.cfg { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  table.cfg thead th { text-align: left; color: var(--teal-900); font-weight: 600; padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 13.5px; white-space: nowrap; }
+  table.cfg thead th.center { text-align: center; }
+  table.cfg tbody td { padding: 13px 16px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+  table.cfg tbody td.center { text-align: center; }
+  table.cfg tbody tr:hover { background: #fafbfc; }
+  tr.group-row td { background: #f1f5f8; color: var(--teal-700); font-weight: 700; font-size: 12px; letter-spacing: .05em; text-transform: uppercase; padding: 9px 16px; border-bottom: 1px solid var(--line); }
+  .evt-name { font-weight: 600; color: var(--ink); }
+  .evt-code { display: block; font-size: 12px; color: var(--muted); font-family: "Consolas", monospace; margin-top: 2px; }
+
+  /* toggle switch */
+  .switch { position: relative; display: inline-block; width: 42px; height: 24px; cursor: pointer; }
+  .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .switch .track { position: absolute; inset: 0; background: #cdd5de; border-radius: 20px; transition: .18s; }
+  .switch .thumb { position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .18s; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .switch input:checked + .track { background: var(--teal-800); }
+  .switch input:checked + .track .thumb { transform: translateX(18px); }
+  .switch input:focus-visible + .track { box-shadow: 0 0 0 3px rgba(13,58,74,.22); }
+  .switch.sound input:checked + .track { background: var(--blue-600); }
+  .switch input:disabled + .track { opacity: .45; cursor: not-allowed; }
+  td .time-sel { width: 92px; }
+  .icon-cell { display: inline-flex; align-items: center; gap: 7px; justify-content: center; }
+  .icon-cell .lab { font-size: 12px; color: var(--muted); }
+
+  /* ===== Events panel ===== */
+  .events-layout { display: grid; grid-template-columns: 280px 1fr; gap: 22px; align-items: start; }
+  .filters { border: 1px solid var(--line); border-radius: 12px; padding: 4px 0 8px; }
+  .filter-block { padding: 14px 18px; border-bottom: 1px solid var(--line-soft); }
+  .filter-block:last-child { border-bottom: none; }
+  .filter-block h4 { margin: 0 0 12px; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--teal-700); }
+  .check { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink); cursor: pointer; user-select: none; padding: 5px 0; }
+  .check input { position: absolute; opacity: 0; pointer-events: none; }
+  .check .box { width: 19px; height: 19px; border-radius: 5px; border: 1.5px solid #b7c0ca; background: #fff; display: grid; place-items: center; color: #fff; flex-shrink: 0; }
+  .check input:checked + .box { background: var(--teal-800); border-color: var(--teal-800); }
+  .check input:focus-visible + .box { box-shadow: 0 0 0 3px rgba(13,58,74,.20); }
+  .check .swatch { width: 9px; height: 9px; border-radius: 3px; margin-left: auto; }
+  .radio { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; padding: 5px 0; }
+  .radio input { position: absolute; opacity: 0; pointer-events: none; }
+  .radio .dot { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #b7c0ca; background: #fff; display: grid; place-items: center; flex-shrink: 0; }
+  .radio .dot::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--teal-800); transform: scale(0); transition: .12s; }
+  .radio input:checked + .dot { border-color: var(--teal-800); }
+  .radio input:checked + .dot::after { transform: scale(1); }
+  .date-row { display: flex; gap: 8px; margin-top: 10px; }
+  .date-row .ctrl { width: 100%; padding: 8px 10px; font-size: 13px; }
+  .date-row.disabled { opacity: .45; pointer-events: none; }
+  .ramal-input { margin-top: 10px; }
+  .ramal-input.disabled { opacity: .45; pointer-events: none; }
+  .ramal-input .ctrl { width: 100%; }
+  .seg-order { display: inline-flex; background: var(--field-bg); border-radius: 8px; padding: 4px; gap: 4px; width: 100%; }
+  .seg-order button { flex: 1; font: inherit; font-size: 13px; font-weight: 600; border: none; background: none; color: var(--muted); padding: 7px; border-radius: 6px; cursor: pointer; }
+  .seg-order button[aria-pressed="true"] { background: #fff; color: var(--teal-900); box-shadow: 0 1px 3px rgba(13,58,74,.18); }
+
+  .events-main { min-width: 0; }
+  .events-bar { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .events-bar h3 { margin: 0; font-size: 16px; font-weight: 700; color: var(--teal-900); }
+  .events-count { font-size: 13px; color: var(--muted); }
+  .events-bar .right { margin-left: auto; display: flex; gap: 10px; }
+  .grid-wrap { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  table.grid { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.grid thead th { background: #f4f7f9; text-align: left; color: var(--teal-900); font-weight: 600; padding: 11px 14px; border-bottom: 1px solid var(--line); font-size: 13px; white-space: nowrap; cursor: pointer; }
+  table.grid thead th .th-inner { display: flex; align-items: center; gap: 6px; }
+  table.grid tbody td { padding: 11px 14px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+  table.grid tbody tr:hover { background: #fafbfc; }
+  .tag { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+  .tag .d { width: 8px; height: 8px; border-radius: 50%; }
+  .mono { font-family: "Consolas", monospace; color: var(--muted); }
+  .empty-state { padding: 50px; text-align: center; color: var(--muted); font-size: 14px; }
+
+  /* Footer */
+  .footerbar { flex-shrink: 0; padding: 14px 40px; margin: 18px 22px 22px; border: 1px solid var(--line); border-radius: 12px; display: flex; align-items: center; gap: 14px; }
+  .footer-note { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .footer-note .ok { color: var(--green); display: flex; }
+  .footer-actions { margin-left: auto; display: flex; gap: 12px; }
+  .btn { font: inherit; font-size: 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border: 1.5px solid transparent; background: none; }
+  .btn-outline { border-color: var(--blue-600); color: var(--teal-900); background: #fff; font-weight: 600; }
+  .btn-outline:hover { background: #f3f8fb; }
+  .btn-outline svg { color: var(--blue-600); }
+  .btn-primary { background: var(--teal-800); color: #fff; font-weight: 600; border-color: var(--teal-800); }
+  .btn-primary:hover { background: var(--teal-900); }
+
+  /* Toasts */
+  .toast-stack { position: fixed; right: 22px; bottom: 22px; display: flex; flex-direction: column; gap: 12px; z-index: 100; }
+  .toast { display: flex; align-items: flex-start; gap: 12px; background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--blue-600); border-radius: 10px; padding: 14px 16px; width: 340px; box-shadow: 0 14px 34px rgba(13,58,74,.18); animation: toastIn .25s ease; }
+  .toast.alarme { border-left-color: var(--red-soft); }
+  .toast.acesso { border-left-color: var(--green); }
+  @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } }
+  .toast .t-ico { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; background: #eaf3fa; color: var(--blue-600); }
+  .toast.alarme .t-ico { background: #fdeceb; color: var(--red-soft); }
+  .toast.acesso .t-ico { background: #e8f5ed; color: var(--green); }
+  .toast .t-body { flex: 1; min-width: 0; }
+  .toast .t-title { font-weight: 700; font-size: 14px; color: var(--teal-900); }
+  .toast .t-desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .toast .t-close { background: none; border: none; color: var(--muted); cursor: pointer; padding: 2px; }
+</style>
+</head>
+<body>
+<div class="app" data-screen-label="Notificações de Eventos">
+
+  <!-- Title / menu bar -->
+  <div class="titlebar">
+    <div class="brand-mark"><span></span><span></span><span></span><span></span></div>
+    <nav class="menu">
+      <button type="button">Arquivo</button>
+      <button type="button">Pabx</button>
+      <button type="button">Ferramentas</button>
+      <button type="button">Configurações</button>
+      <button type="button">Ajuda</button>
+    </nav>
+    <div class="titlebar-right">
+      <div class="conectar"><span class="dot"></span> CondoNet conectado</div>
+      <div class="win-btn" title="Minimizar"><svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      <div class="win-btn" title="Maximizar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="1"/></svg></div>
+      <div class="win-btn close" title="Fechar"><svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></div>
+    </div>
+  </div>
+
+  <!-- Tab strip -->
+  <div class="tabstrip">
+    <div class="tab-home"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+    <div class="tab">
+      <span class="tab-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
+      Notificações de Eventos
+      <span class="tab-close"><svg width="13" height="13" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <div class="page-head">
+      <span class="us-badge">US009</span>
+      <h1 class="page-title">Notificações de Eventos</h1>
+      <p class="page-sub">Defina quais eventos e chamadas geram alertas visuais/sonoros e quais são apenas registrados — em tempo real, sem reiniciar o PABX.</p>
+    </div>
+
+    <!-- Sub-tabs -->
+    <div class="subtabs" role="tablist">
+      <button class="subtab" role="tab" aria-selected="true" data-tab="cfg">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Configuração de Alertas
+      </button>
+      <button class="subtab" role="tab" aria-selected="false" data-tab="events">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Painel de Eventos
+      </button>
+    </div>
+
+    <!-- ===== Panel: Config ===== -->
+    <div class="panel" id="panel-cfg" role="tabpanel">
+      <div class="config-toolbar">
+        <div class="audio">
+          <label class="mini" for="audioSel">Som do alerta</label>
+          <select class="ctrl" id="audioSel">
+            <option>Bipe padrão (fallback)</option>
+            <option>sino_curto.wav</option>
+            <option>campainha.wav</option>
+            <option>alerta_grave.wav</option>
+          </select>
+          <button class="ghost-btn" type="button" id="testSound">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+            Testar som
+          </button>
+        </div>
+        <div class="role-chip">
+          <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          Perfil: <strong>Supervisor</strong> — pode alterar "Salvar"
+        </div>
+      </div>
+
+      <table class="cfg">
+        <thead>
+          <tr>
+            <th>Tipo de evento</th>
+            <th class="center">Notificação visual</th>
+            <th class="center">Alerta sonoro</th>
+            <th class="center">Tempo de exibição</th>
+            <th class="center">Salvar (persistir)</th>
+          </tr>
+        </thead>
+        <tbody id="cfgBody"></tbody>
+      </table>
+    </div>
+
+    <!-- ===== Panel: Events ===== -->
+    <div class="panel" id="panel-events" role="tabpanel" hidden>
+      <div class="events-layout">
+
+        <!-- Filters -->
+        <aside class="filters">
+          <div class="filter-block">
+            <h4>Tipos de evento</h4>
+            <div id="typeFilters"></div>
+          </div>
+
+          <div class="filter-block">
+            <h4>Ramal / Tag</h4>
+            <label class="check"><input type="checkbox" id="ckbRamal" /><span class="box"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Filtrar por ramal</label>
+            <div class="ramal-input disabled" id="ramalInputWrap">
+              <input type="text" class="ctrl" id="eRamal" placeholder="Ex.: 201" inputmode="numeric" />
+            </div>
+          </div>
+
+          <div class="filter-block">
+            <h4>Período</h4>
+            <label class="radio"><input type="radio" name="periodo" value="0" checked /><span class="dot"></span> Dia atual</label>
+            <label class="radio"><input type="radio" name="periodo" value="1" /><span class="dot"></span> Semana</label>
+            <label class="radio"><input type="radio" name="periodo" value="2" /><span class="dot"></span> Mês</label>
+            <label class="radio"><input type="radio" name="periodo" value="3" id="rbtnDe" /><span class="dot"></span> De… Até…</label>
+            <div class="date-row disabled" id="dateRow">
+              <input type="date" class="ctrl" id="eDe" />
+              <input type="date" class="ctrl" id="eAte" />
+            </div>
+          </div>
+
+          <div class="filter-block">
+            <h4>Ordenação</h4>
+            <div class="seg-order" id="orderSeg">
+              <button type="button" data-order="desc" aria-pressed="true">Decrescente</button>
+              <button type="button" data-order="asc" aria-pressed="false">Crescente</button>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Grid -->
+        <div class="events-main">
+          <div class="events-bar">
+            <h3>Histórico de eventos</h3>
+            <span class="events-count" id="eventsCount"></span>
+            <div class="right">
+              <button class="ghost-btn" type="button" id="simulate">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                Simular evento
+              </button>
+              <button class="btn-outline btn" type="button" id="exportBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar visíveis
+              </button>
+            </div>
+          </div>
+          <div class="grid-wrap">
+            <table class="grid">
+              <thead>
+                <tr>
+                  <th data-sort="codigo"><div class="th-inner">Código</div></th>
+                  <th>Data</th>
+                  <th>Hora</th>
+                  <th>Ramal</th>
+                  <th>Tipo</th>
+                  <th>Descrição</th>
+                  <th>Usuário</th>
+                </tr>
+              </thead>
+              <tbody id="gridBody"></tbody>
+            </table>
+            <div class="empty-state" id="emptyState" hidden>Nenhum evento corresponde aos filtros selecionados.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footerbar">
+    <div class="footer-note"><span class="ok"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span> Alterações entram em vigor imediatamente, sem reiniciar o PABX.</div>
+    <div class="footer-actions">
+      <button type="button" class="btn btn-outline">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        Restaurar padrões
+      </button>
+      <button type="button" class="btn btn-outline">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Ajuda
+      </button>
+      <button type="button" class="btn btn-primary" id="saveBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+const CFG_GROUPS = [
+  { label: "Chamadas", items: [
+    { code: "chamada_ringando", name: "Ramal tocando", v: false, s: false, t: 5, save: true },
+    { code: "chamada_atendida", name: "Chamada atendida", v: false, s: false, t: 3, save: true },
+    { code: "chamada_nao_atendida", name: "Chamada não atendida", v: true, s: true, t: 8, save: true },
+  ]},
+  { label: "Acessos", items: [
+    { code: "acesso_porteiro", name: "Acesso — Porteiro", v: true, s: false, t: 5, save: true },
+    { code: "acesso_liberacao", name: "Acesso — Liberação", v: false, s: false, t: 5, save: false },
+  ]},
+  { label: "Eventos do sistema (TTipoEvento)", items: [
+    { code: "ponto_entrada", name: "Entrada de ponto", v: false, s: false, t: 5, save: true },
+    { code: "ponto_saida", name: "Saída de ponto", v: false, s: false, t: 5, save: true },
+    { code: "ronda", name: "Ronda", v: false, s: false, t: 5, save: true },
+    { code: "alarme", name: "Alarme", v: true, s: true, t: 10, save: true },
+    { code: "alerta", name: "Alerta", v: true, s: false, t: 8, save: true },
+    { code: "discagem", name: "Discagem", v: false, s: false, t: 3, save: true },
+    { code: "sensor_porta", name: "Sensor de porta", v: true, s: false, t: 5, save: true },
+    { code: "violacao", name: "Violação", v: true, s: true, t: 10, save: true },
+    { code: "trafego_bus", name: "Tráfego BUS", v: false, s: false, t: 3, save: false },
+  ]},
+];
+
+const TYPE_FILTERS = [
+  { key: "ponto",    label: "Ponto",          color: "#2b86c5" },
+  { key: "ronda",    label: "Ronda",          color: "#7c5cd6" },
+  { key: "acesso",   label: "Acesso",         color: "#15803d" },
+  { key: "alerta",   label: "Alerta",         color: "#b7791f" },
+  { key: "alarme",   label: "Alarme",         color: "#e74c3c" },
+  { key: "discagem", label: "Discagem",       color: "#0d8a8a" },
+  { key: "sensor",   label: "Sensor de porta",color: "#5a7184" },
+  { key: "violacao", label: "Violação",       color: "#c0392b" },
+  { key: "bus",      label: "Tráfego BUS",    color: "#9aa4b0" },
+  { key: "chamada",  label: "Chamada",        color: "#1b6fa8" },
+];
+const TYPE_COLOR = Object.fromEntries(TYPE_FILTERS.map(t => [t.key, t.color]));
+const TYPE_LABEL = Object.fromEntries(TYPE_FILTERS.map(t => [t.key, t.label]));
+
+const EVENTS = [
+  { codigo: 1042, data: "28/05/2026", hora: "14:38:21", ramal: "201", type: "chamada",  desc: "Ramal 201 não atendeu (NAO_ATENDIDA)", user: "—" },
+  { codigo: 1041, data: "28/05/2026", hora: "14:35:09", ramal: "305", type: "acesso",   desc: "Liberado pelo porteiro (PORTEIRO)", user: "João" },
+  { codigo: 1040, data: "28/05/2026", hora: "14:31:55", ramal: "—",   type: "alarme",   desc: "Sensor da garagem disparado", user: "—" },
+  { codigo: 1039, data: "28/05/2026", hora: "14:27:43", ramal: "102", type: "ronda",    desc: "Ronda do setor A finalizada", user: "Carlos" },
+  { codigo: 1038, data: "28/05/2026", hora: "14:22:10", ramal: "410", type: "acesso",   desc: "Liberação remota (LIBERACAO)", user: "Ana" },
+  { codigo: 1037, data: "28/05/2026", hora: "14:18:02", ramal: "201", type: "ponto",    desc: "Registro de entrada de ponto", user: "Maria" },
+  { codigo: 1036, data: "28/05/2026", hora: "14:09:47", ramal: "—",   type: "sensor",   desc: "Porta de serviço aberta", user: "—" },
+  { codigo: 1035, data: "28/05/2026", hora: "14:01:33", ramal: "318", type: "discagem", desc: "Discagem externa para 0XX21…", user: "Portaria" },
+  { codigo: 1034, data: "28/05/2026", hora: "13:52:18", ramal: "—",   type: "violacao", desc: "Tentativa de acesso negada (tag inválida)", user: "—" },
+  { codigo: 1033, data: "28/05/2026", hora: "13:44:05", ramal: "201", type: "chamada",  desc: "Chamada atendida (ATENDIDA)", user: "—" },
+  { codigo: 1032, data: "28/05/2026", hora: "13:37:29", ramal: "—",   type: "alerta",   desc: "Bateria do nobreak em nível baixo", user: "—" },
+  { codigo: 1031, data: "28/05/2026", hora: "13:25:51", ramal: "—",   type: "bus",      desc: "Reconexão de dispositivo no BUS 3", user: "—" },
+  { codigo: 1030, data: "28/05/2026", hora: "13:12:14", ramal: "207", type: "acesso",   desc: "Acesso liberado pelo porteiro", user: "João" },
+  { codigo: 1029, data: "28/05/2026", hora: "12:58:40", ramal: "201", type: "ponto",    desc: "Registro de saída de ponto", user: "Maria" },
+];
+
+const cfgBody = document.getElementById('cfgBody');
+function timeOptions(sel) {
+  return [3,5,8,10,15].map(s => `<option value="${s}" ${s===sel?'selected':''}>${s}s</option>`).join('') + `<option value="0" ${sel===0?'selected':''}>Fixo</option>`;
+}
+CFG_GROUPS.forEach(g => {
+  cfgBody.insertAdjacentHTML('beforeend', `<tr class="group-row"><td colspan="5">${g.label}</td></tr>`);
+  g.items.forEach(it => {
+    cfgBody.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td><span class="evt-name">${it.name}</span><span class="evt-code">${it.code}</span></td>
+        <td class="center"><label class="switch"><input type="checkbox" ${it.v?'checked':''} data-vis="${it.code}"><span class="track"><span class="thumb"></span></span></label></td>
+        <td class="center"><label class="switch sound"><input type="checkbox" ${it.s?'checked':''} data-snd="${it.code}"><span class="track"><span class="thumb"></span></span></label></td>
+        <td class="center"><select class="ctrl time-sel">${timeOptions(it.t)}</select></td>
+        <td class="center"><label class="switch"><input type="checkbox" ${it.save?'checked':''}><span class="track"><span class="thumb"></span></span></label></td>
+      </tr>`);
+  });
+});
+
+const typeFilters = document.getElementById('typeFilters');
+TYPE_FILTERS.forEach(t => {
+  typeFilters.insertAdjacentHTML('beforeend', `
+    <label class="check"><input type="checkbox" class="type-cb" value="${t.key}" checked><span class="box"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> ${t.label}<span class="swatch" style="background:${t.color}"></span></label>`);
+});
+
+document.querySelectorAll('.subtab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.subtab').forEach(t => t.setAttribute('aria-selected', t === tab));
+    document.getElementById('panel-cfg').hidden = tab.dataset.tab !== 'cfg';
+    document.getElementById('panel-events').hidden = tab.dataset.tab !== 'events';
+  });
+});
+
+const ckbRamal = document.getElementById('ckbRamal');
+const ramalWrap = document.getElementById('ramalInputWrap');
+const eRamal = document.getElementById('eRamal');
+ckbRamal.addEventListener('change', () => {
+  ramalWrap.classList.toggle('disabled', !ckbRamal.checked);
+  if (ckbRamal.checked) eRamal.focus();
+  renderGrid();
+});
+eRamal.addEventListener('input', renderGrid);
+
+document.querySelectorAll('input[name="periodo"]').forEach(r => {
+  r.addEventListener('change', () => {
+    document.getElementById('dateRow').classList.toggle('disabled', document.getElementById('rbtnDe').checked === false);
+  });
+});
+
+let sortOrder = 'desc';
+document.getElementById('orderSeg').addEventListener('click', e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  document.querySelectorAll('#orderSeg button').forEach(b => b.setAttribute('aria-pressed', b === btn));
+  sortOrder = btn.dataset.order;
+  renderGrid();
+});
+
+document.querySelectorAll('.type-cb').forEach(cb => cb.addEventListener('change', renderGrid));
+
+const gridBody = document.getElementById('gridBody');
+const emptyState = document.getElementById('emptyState');
+const eventsCount = document.getElementById('eventsCount');
+
+function renderGrid() {
+  const active = new Set([...document.querySelectorAll('.type-cb:checked')].map(c => c.value));
+  let rows = EVENTS.filter(e => active.has(e.type));
+  if (ckbRamal.checked && eRamal.value.trim()) {
+    rows = rows.filter(e => e.ramal === eRamal.value.trim());
+  }
+  rows.sort((a,b) => sortOrder === 'desc' ? b.codigo - a.codigo : a.codigo - b.codigo);
+
+  gridBody.innerHTML = rows.map(e => `
+    <tr>
+      <td class="mono">${e.codigo}</td>
+      <td>${e.data}</td>
+      <td class="mono">${e.hora}</td>
+      <td>${e.ramal}</td>
+      <td><span class="tag" style="background:${hexA(TYPE_COLOR[e.type],.12)};color:${TYPE_COLOR[e.type]}"><span class="d" style="background:${TYPE_COLOR[e.type]}"></span>${TYPE_LABEL[e.type]}</span></td>
+      <td>${e.desc}</td>
+      <td>${e.user}</td>
+    </tr>`).join('');
+
+  emptyState.hidden = rows.length !== 0;
+  eventsCount.textContent = rows.length + ' de ' + EVENTS.length + ' eventos';
+}
+function hexA(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
+}
+renderGrid();
+
+function beep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+    o.start(); o.stop(ctx.currentTime + 0.3);
+  } catch (e) {}
+}
+document.getElementById('testSound').addEventListener('click', beep);
+
+const toastStack = document.getElementById('toastStack');
+function showToast({ title, desc, kind, sound, time }) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind ? ' ' + kind : '');
+  const ico = kind === 'alarme'
+    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+    : kind === 'acesso'
+    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>'
+    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+  el.innerHTML = `<div class="t-ico">${ico}</div><div class="t-body"><div class="t-title">${title}</div><div class="t-desc">${desc}</div></div><button class="t-close" aria-label="Fechar">✕</button>`;
+  el.querySelector('.t-close').addEventListener('click', () => el.remove());
+  toastStack.appendChild(el);
+  if (sound) beep();
+  if (time > 0) setTimeout(() => el.remove(), time * 1000);
+}
+
+document.getElementById('simulate').addEventListener('click', () => {
+  const vis = document.querySelector('[data-vis="chamada_nao_atendida"]').checked;
+  const snd = document.querySelector('[data-snd="chamada_nao_atendida"]').checked;
+  if (!vis) {
+    showToast({ title: "Registrado silenciosamente", desc: "Chamada não atendida salva no histórico (notificação visual desativada).", kind: "", sound: false, time: 5 });
+    return;
+  }
+  showToast({ title: "Chamada não atendida", desc: "Ramal 201 não atendeu — registrado às " + new Date().toLocaleTimeString('pt-BR'), kind: "alarme", sound: snd, time: 8 });
+});
+
+document.getElementById('saveBtn').addEventListener('click', () => {
+  showToast({ title: "Configurações salvas", desc: "Vigora imediatamente — sem reiniciar o PABX.", kind: "acesso", sound: false, time: 4 });
+});
+document.getElementById('exportBtn').addEventListener('click', () => {
+  showToast({ title: "Exportação concluída", desc: "Arquivo gerado apenas com os eventos visíveis na grade.", kind: "acesso", sound: false, time: 4 });
+});
+</script>
+</body>
+</html>

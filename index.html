@@ -967,15 +967,6 @@
   // Open modal by default so the proposal is visible on load
   open();
 
-  // Auto-print once fonts and layout are ready
-  function triggerPrint() {
-    setTimeout(() => window.print(), 500);
-  }
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(() => window.addEventListener('load', triggerPrint));
-  } else {
-    window.addEventListener('load', triggerPrint);
-  }
 </script>
 </body>
 </html>
